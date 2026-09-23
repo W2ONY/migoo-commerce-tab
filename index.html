@@ -152,6 +152,16 @@
   .capcard .im { margin-top: 6px; height: 58px; border-radius: 8px; overflow: hidden; background: #F3F4F6; }
   .capcard .im { display: flex; align-items: center; justify-content: center; }
   .capcard .im svg { display: block; }
+  /* Query style = Card-2(用户参考图):能力入口改为两列网格,每格 = 彩色圆角 icon 块 + 一级标题 + 右箭头 + 二级说明 */
+  .capgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px 0; }
+  .capg { background: #fff; border: 1px solid rgba(0,0,0,.06); border-radius: 12px; padding: 12px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .capg:active { background: var(--section-gap); }
+  .capg .h { display: flex; align-items: center; gap: 6px; }
+  .capg .ic { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .capg .t { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-87); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .capg .ar { color: var(--grey-99); font-size: 14px; flex-shrink: 0; }
+  .capg .s { font-size: 12px; line-height: 1.35; color: var(--text-65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* ---------- sections ---------- */
   .sec { margin-top: 26px; }
@@ -422,7 +432,18 @@
      问题写在蓝色说明行里。白底会话里给整卡一圈 6% 细描边,图区只留底边。 */
   .nt-cards .gcard { flex: 0 0 140px; width: 140px; min-width: 0; border: .5px solid rgba(0,0,0,.06); }   /* min-width:0:单行商品名不能把卡撑宽 */
   .nt-cards .gcard .imgw { border: 0; border-bottom: .5px solid rgba(0,0,0,.06); }
-  .nt-cards .gcard .imgw img { aspect-ratio: 1/1; }   /* 会话里竖向空间有限:方图,文字区才露得出来 */
+  /* 横滑条里五张卡等高 216:query 卡 168 宽(引号 + 问题 3 行 + 底部 76 高附件区),商品卡 140 宽(图 92 + 文字区) */
+  .nt-cards > .qcard, .nt-cards > .gcard { height: 216px; box-sizing: border-box; }
+  .nt-cards .qcard { flex: 0 0 168px; width: 168px; min-width: 0; display: flex; flex-direction: column; padding: 30px 12px 12px; }
+  .nt-cards .qcard .q { font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .nt-cards .qcard .qatt { margin-top: auto; height: 76px; }
+  .nt-cards .qcard .qatt.one img { aspect-ratio: auto; height: 76px; width: 100%; border-radius: 8px; }
+  .nt-cards .qcard .qatt.pk { align-items: center; }
+  .nt-cards .qcard .qatt.pk .cside { width: 66px; }
+  .nt-cards .qcard .qatt.pk .cside img { aspect-ratio: 1/1; border-radius: 8px; }
+  .nt-cards .qcard .qatt.row { align-items: center; }
+  .nt-cards .gcard .imgw img { aspect-ratio: auto; height: 92px; }
+  .nt-cards .gcard .why { -webkit-line-clamp: 1; }
   /* 会话输入框上方的能力行:单行横滑,贴到两边(dock 自身有 16px 内距,这里用负 margin 抵掉) */
   .shp-cchips { display: flex; flex-wrap: nowrap; gap: 7px; margin: 0 -16px; padding: 0 16px 9px; overflow-x: auto; scrollbar-width: none; }
   .shp-cchips::-webkit-scrollbar { height: 0; }
@@ -1328,6 +1349,7 @@
   .devbar h4{margin:0 0 4px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#8E8E93; font-weight:600}
   .devbar h4:not(:first-child){margin-top:18px}
   .devbar .seg{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px}
+  .devbar .seg.three{grid-template-columns:1fr 1fr 1fr}
   .devbar .seg button{
     border:1px solid #E5E5EA; background:#fff; border-radius:9px;
     padding:8px 2px; font-family:var(--sf); font-size:12px; font-weight:600; color:#3C3C43; cursor:pointer;
@@ -1357,9 +1379,10 @@
         <button id="pos-newtopic" onclick="setPosition('newtopic')">NewTopic</button>
       </div>
       <h4>Query style</h4>
-      <div class="seg">
+      <div class="seg three">
         <button id="qs-text" class="on" onclick="setQueryStyle('text')">Text</button>
         <button id="qs-card" onclick="setQueryStyle('card')">Card</button>
+        <button id="qs-card2" onclick="setQueryStyle('card2')">Card-2</button>
       </div>
     </div>
     <div class="devbar">
@@ -1634,7 +1657,7 @@ function setDemoState(s) {
   if (cardBtn) cardBtn.disabled = !SHOPEE_SHELL;
   if (!SHOPEE_SHELL && queryStyle === 'card') {
     queryStyle = 'text';
-    ['text','card'].forEach(k => document.getElementById('qs-'+k)?.classList.toggle('on', k === 'text'));
+    ['text','card','card2'].forEach(k => document.getElementById('qs-'+k)?.classList.toggle('on', k === 'text'));
   }
   locate();
 }
@@ -2035,7 +2058,7 @@ const home = () => {
     </div>`;
       /* 能力入口 = 卡片条(标题 + 配图,见 CAP_IMG);query chips 仍是原来的 pill 行 */
       const chipRow = USE_CAPS
-        ? `<div class="capcards">${CAP_CHIPS.map(c=>`<div class="capcard" onclick="openCap('${c.k}')"><div class="t">${c.t}</div><div class="im">${CAP_ART[c.k]}</div></div>`).join('')}</div>`
+        ? (queryStyle === 'card2' ? capGridHTML() : `<div class="capcards">${CAP_CHIPS.map(c=>`<div class="capcard" onclick="openCap('${c.k}')"><div class="t">${c.t}</div><div class="im">${CAP_ART[c.k]}</div></div>`).join('')}</div>`)
         : `<div class="askchips${HOME_COMPOSER ? ' above' : ''}">
       ${CF_CHIPS.map(t=>`<span class="achip" onclick="openFocus('${cfEsc(t)}')">${t}</span>`).join('')}
     </div>`;
@@ -3197,6 +3220,19 @@ const CAP_ART = {
   compare: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F1F1F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 3v18" /><path d="m19 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" /><path d="m5 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M7 21h10" /></svg>',
   price: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F1F1F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m15 9-6 6" /><path d="M9 9h.01" /><path d="M15 15h.01" /></svg>'
 };
+/* Card-2 网格每格的颜色与二级说明(按能力 key);icon 复用 CAP_ART 缩成 14px 白线 */
+const CAP_GRID = {
+  outfit: { c:'#FF7A1A', s:'Tell me the occasion, I’ll style it' },
+  gift:   { c:'#1DA462', s:'Who’s it for? I’ll pick' },
+  compare:{ c:'#E5484D', s:'Two items, side by side' },
+  price:  { c:'#FF4E8A', s:'Check it across the web first' }
+};
+const capIcSm = k => CAP_ART[k].replace('width="40"','width="14"').replace('height="40"','height="14"').replace('stroke="#1F1F1F"','stroke="#fff"').replace('stroke-width="1.5"','stroke-width="2.2"');
+const capGridHTML = () => `<div class="capgrid">${CAP_CHIPS.map(c => `
+  <div class="capg" onclick="openCap('${c.k}')">
+    <div class="h"><span class="ic" style="background:${CAP_GRID[c.k].c}">${capIcSm(c.k)}</span><span class="t">${c.t}</span><span class="ar">→</span></div>
+    <div class="s">${CAP_GRID[c.k].s}</div>
+  </div>`).join('')}</div>`;
 const CAP_CHIPS = [
   /* 穿搭这一格是垂类,但仍然守得住这一排的规矩 ——
      它有要补的东西(什么场合),落点还是输入框。
@@ -3951,17 +3987,18 @@ let queryStyle = 'text';
 function setQueryStyle(v){
   if (v === 'card' && !SHOPEE_SHELL) return;   /* Migoo 壳没有 Card */
   queryStyle = v;
-  ['text','card'].forEach(k => document.getElementById('qs-'+k)?.classList.toggle('on', k === v));
+  ['text','card','card2'].forEach(k => document.getElementById('qs-'+k)?.classList.toggle('on', k === v));
+  /* Card-2 只改电商 tab 输入框下的能力入口(用户拍板),所以落在电商 tab 看效果;其余两种仍定位到 Assistant */
+  if (v === 'card2') { render(); return; }
   locate();
 }
 /* 每张卡 = 一件用户碰过的商品 + 关于它的一个问题(写在说明行)+ 一个动作键:
      buy = 直接去 Shopee 结账;similar = 问同款;price = 问价格是否划算 */
 const NT_CARDS = [
-  { pid:'sneaker',  q:'Is the Nike Free RN worth it at $89?',                btn:'buy' },
-  { pid:'tote',     q:'Will the Transport Tote fit a 13″ laptop?',           btn:'similar' },
-  { pid:'phones',   q:'Is AirPods Max worth it at $449?',                    btn:'price' },
-  { pid:'backpack', q:'Does the Atlas backpack count as a personal item?',  btn:'similar' }
+  { pid:'sneaker',  q:'Is the Nike Free RN worth it at $89?',                btn:'buy' }
 ];
+/* 横滑条的构成(用户拍板 4:1):四张 query 卡(复用流内 qcard,引号 + 问题 + 附件图)+ 一张商品卡,等高 */
+const NT_STRIP = [ {q:'flight'}, {q:'hat'}, {q:'chairs'} ];   /* 09-22 用户去掉了纯文字的 stroller 卡和商品卡;要加回商品卡写 {product:0} */
 const NT_BTN = { buy:'Buy Now', similar:'Ask similar style', price:'Ask good price' };
 function ntAsk(pid, q){ sheetId = pid; sendQ(q); }   /* 带商品上下文发出:气泡里挂引用条 */
 function ntBtn(pid, act){
@@ -3970,7 +4007,7 @@ function ntBtn(pid, act){
   if (act === 'similar') return ntAsk(pid, 'Show me more like the ' + p.nm);
   if (act === 'price') return ntAsk(pid, 'Is $' + p.pr + ' a good price for the ' + p.nm + '?');
 }
-const ntCardsHTML = () => `<div class="nt-cards">${NT_CARDS.map(c => { const p = P[c.pid]; return `
+const ntProductCard = (c) => { const p = P[c.pid]; return `
       <div class="gcard" onclick="ntAsk('${c.pid}', '${cfEsc(c.q)}')">
         <div class="imgw"><img src="${p.img}" alt=""></div>
         <div class="cap">
@@ -3979,7 +4016,8 @@ const ntCardsHTML = () => `<div class="nt-cards">${NT_CARDS.map(c => { const p =
           <div class="why">${c.q}</div>
           ${c.btn ? `<button class="buynow" onclick="event.stopPropagation();ntBtn('${c.pid}','${c.btn}')">${NT_BTN[c.btn]}</button>` : ''}
         </div>
-      </div>`; }).join('')}</div>`;
+      </div>`; };
+const ntCardsHTML = () => `<div class="nt-cards">${NT_STRIP.map(it => it.q ? qcard(it.q) : ntProductCard(NT_CARDS[it.product])).join('')}</div>`;
 const ntQueriesHTML = () => queryStyle === 'card' ? ntCardsHTML()
   : `<div class="nt-list">${NT_QUERIES.map(t => `<div class="nt-q" onclick="sendQ('${cfEsc(t)}')">${t}</div>`).join('')}</div>`;
 const newTopicHTML = () =>
